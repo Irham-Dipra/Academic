@@ -1,0 +1,271 @@
+=== Running Comprehensive Test Scenarios (5-State System) ===
+
+===== PART 1: AUTOMATIC STATE TRANSITIONS =====
+
+--- Test 1: Automatic OPEN -> FULL when capacity reached ---
+CSE101 initial: status=OPEN enrolled=0 cap=2
+Enrolled: Alice in CSE101
+Enrolled: Bob in CSE101
+CSE101 is now FULL.
+CSE101 after 2 enrollments: status=FULL
+
+--- Test 2: FULL course behavior (reject enroll, allow waitlist) ---
+Cannot enroll; course is FULL. You may waitlist: CSE101
+Waitlisted: Charlie for CSE101
+Waitlisted: Diana for CSE101
+Waitlisted: Evan for CSE101
+Waitlist for CSE101:
+  S3 - Charlie
+  S4 - Diana
+  S5 - Evan
+
+--- Test 3: Automatic FULL -> OPEN on drop + waitlist promotion ---
+Before drop: status=FULL
+Dropped from enrolled: Alice from CSE101
+Promoted from waitlist: Charlie into CSE101
+After drop: status=FULL (Charlie promoted from waitlist)
+Roster for CSE101 - Intro Programming (FULL, cap=2):
+  S2 - Bob
+  S3 - Charlie
+Waitlist for CSE101:
+  S4 - Diana
+  S5 - Evan
+
+--- Test 4: Another drop triggering FULL -> OPEN ---
+Dropped from enrolled: Bob from CSE101
+Promoted from waitlist: Diana into CSE101
+After Bob drops: status=FULL (Diana promoted)
+Roster for CSE101 - Intro Programming (FULL, cap=2):
+  S3 - Charlie
+  S4 - Diana
+
+===== PART 2: ADMIN STATE TRANSITIONS (FORWARD) =====
+
+--- Test 5: Admin DRAFT -> OPEN ---
+CSE499 before: DRAFT
+CSE499 transitioned DRAFT -> OPEN
+CSE499 after: OPEN
+Enrolled: Evan in CSE499
+
+--- Test 6: Admin OPEN -> CLOSED ---
+CSE310 before: OPEN
+CSE310 transitioned OPEN -> CLOSED
+CSE310 after: CLOSED
+Cannot enroll; course is CLOSED: CSE310
+
+--- Test 7: Admin OPEN -> DRAFT (reverting to draft) ---
+CSE400 before: OPEN
+CSE400 transitioned OPEN -> DRAFT
+CSE400 after: DRAFT (no longer visible to students)
+
+--- Test 8: Admin FULL -> CLOSED (no waitlist) ---
+Enrolled: Alice in CSE150
+CSE150 is now FULL.
+CSE150 before: FULL
+CSE150 transitioned FULL -> CLOSED
+CSE150 after: CLOSED
+
+--- Test 9: Admin FULL -> CLOSED with capacity increase ---
+NOTE: In interactive mode, admin is prompted to increase capacity when closing FULL course.
+The capacity increase happens DURING the close operation, not before.
+
+Enrolled: Alice in CSE250
+Enrolled: Bob in CSE250
+CSE250 is now FULL.
+CSE250 status: FULL (enrolled=2, cap=2)
+Waitlisted: Charlie for CSE250
+Waitlisted: Diana for CSE250
+Waitlisted: Evan for CSE250
+Waitlisted: Frank for CSE250
+Waitlisted: 4 students
+Waitlist for CSE250:
+  S3 - Charlie
+  S4 - Diana
+  S5 - Evan
+  S6 - Frank
+
+Demonstrating FULL -> CLOSED with manual capacity increase:
+(In ConsoleUI, admin would be prompted interactively)
+Setting capacity of CSE250 to 5
+CSE250 status changed to OPEN (capacity allows enrollment).
+After capacity increase, status became: OPEN
+To demonstrate FULL->CLOSED, we need course to be FULL first...
+Actual usage: use setStatusAdminInteractive() in ConsoleUI for proper flow.
+
+Enrolled: Diana in CSE260
+Enrolled: Evan in CSE260
+CSE260 is now FULL.
+CSE260 status: FULL
+Waitlisted: Alice for CSE260
+Waitlisted: Bob for CSE260
+Waitlisted: Charlie for CSE260
+CSE260 waitlist: 3 students
+Waitlist for CSE260:
+  S1 - Alice
+  S2 - Bob
+  S3 - Charlie
+
+Now closing CSE260 from FULL (without capacity increase in test):
+CSE260 transitioned FULL -> CLOSED
+Result: Course closed, waitlist remains (no capacity increase).
+Roster for CSE260 - Database Systems (CLOSED, cap=2):
+  S4 - Diana
+  S5 - Evan
+Waitlist for CSE260:
+  S1 - Alice
+  S2 - Bob
+  S3 - Charlie
+
+--- Test 10: Admin DRAFT -> CLOSED (closing before opening) ---
+CSE500 before: DRAFT
+CSE500 transitioned DRAFT -> CLOSED
+CSE500 after: CLOSED
+
+===== PART 3: ADMIN STATE TRANSITIONS (BACKWARD) =====
+
+--- Test 11: Admin CLOSED -> OPEN (reopening) ---
+CSE220 before: CLOSED
+CSE220 transitioned CLOSED -> OPEN
+CSE220 after: OPEN
+Enrolled: Alice in CSE220
+
+--- Test 12: Admin CLOSED -> DRAFT (reverting to planning) ---
+CSE310 before: CLOSED
+CSE310 transitioned CLOSED -> DRAFT
+CSE310 after: DRAFT
+
+===== PART 4: CAPACITY CHANGES AFFECTING STATE =====
+
+--- Test 13: Capacity increase causing status change ---
+CSE201 before: enrolled=0 cap=1 status=OPEN
+Setting capacity of CSE201 to 3
+CSE201 status changed to OPEN (capacity allows enrollment).
+CSE201 after capacity increase: status=OPEN
+Enrolled: Bob in CSE201
+
+--- Test 14: Capacity decrease (more enrolled than capacity) ---
+CSE220 before: enrolled=1 cap=2 status=OPEN
+Setting capacity of CSE220 to 1
+CSE220 status changed to FULL (at capacity).
+CSE220 after capacity decrease: status=FULL (over capacity)
+
+===== PART 5: COURSE CANCELLATION =====
+
+--- Test 15: OPEN -> CANCELLED (clears all students) ---
+CSE101 before cancellation:
+Roster for CSE101 - Intro Programming (FULL, cap=2):
+  S3 - Charlie
+  S4 - Diana
+Waitlist for CSE101:
+  S5 - Evan
+CSE101 has been CANCELLED. All students dropped and waitlist cleared.
+CSE101 after cancellation:
+Roster for CSE101 - Intro Programming (CANCELLED, cap=2):
+  [no enrolled]
+Schedule for Charlie (S3):
+  Enrolled:
+    [none]
+  Waitlisted:
+    CSE250 - Computer Architecture (OPEN)
+    CSE260 - Database Systems (CLOSED)
+
+--- Test 16: CANCELLED -> DRAFT (reinstating cancelled course) ---
+CSE101 before: CANCELLED
+CSE101 transitioned CANCELLED -> DRAFT (reinstating course)
+CSE101 after: DRAFT (course reinstated for planning)
+
+--- Test 17: CANCELLED -> OPEN/CLOSED (invalid) ---
+CSE600 has been CANCELLED. All students dropped and waitlist cleared.
+Attempting invalid transitions from CANCELLED:
+Invalid: CANCELLED can only transition to DRAFT for CSE600
+Invalid: CANCELLED can only transition to DRAFT for CSE600
+
+--- Test 18: FULL -> CANCELLED (clears roster and waitlist) ---
+Enrolled: Bob in CSE700
+CSE700 is now FULL.
+Waitlisted: Charlie for CSE700
+Waitlisted: Diana for CSE700
+CSE700 before:
+Roster for CSE700 - Machine Learning (FULL, cap=1):
+  S2 - Bob
+Waitlist for CSE700:
+  S3 - Charlie
+  S4 - Diana
+CSE700 has been CANCELLED. All students dropped and waitlist cleared.
+CSE700 after:
+Roster for CSE700 - Machine Learning (CANCELLED, cap=1):
+  [no enrolled]
+Schedule for Bob (S2):
+  Enrolled:
+    CSE250 - Computer Architecture (OPEN)
+    CSE201 - Data Structures (OPEN)
+  Waitlisted:
+    CSE260 - Database Systems (CLOSED)
+
+===== PART 6: INVALID TRANSITIONS =====
+
+--- Test 19: DRAFT -> FULL (invalid) ---
+Invalid transition from DRAFT to FULL
+
+--- Test 20: FULL -> OPEN manual attempt (should fail - automatic only) ---
+Enrolled: Alice in CSE900
+CSE900 is now FULL.
+CSE900 status: FULL
+Invalid transition from FULL to OPEN (FULL->OPEN is automatic on drop)
+
+--- Test 21: OPEN -> FULL (invalid - automatic only) ---
+CSE499 status: OPEN
+Invalid transition from OPEN to FULL
+
+===== PART 7: TIGHT COUPLING EXAMPLES =====
+
+--- Test 22: Cross-object manipulation (tight coupling) ---
+Diana enrolls in CSE220 -> Student calls Course, both update their lists
+Cannot enroll; course is FULL. You may waitlist: CSE220
+Diana's schedule:
+Schedule for Diana (S4):
+  Enrolled:
+    CSE260 - Database Systems (CLOSED)
+  Waitlisted:
+    CSE250 - Computer Architecture (OPEN)
+CSE220 roster:
+Roster for CSE220 - Algorithms (FULL, cap=1):
+  S1 - Alice
+Note: Both Student and Course maintain duplicate state!
+
+--- Test 23: Waitlist promotion (Course updates Student directly) ---
+Enrolled: Bob in CSE1000
+CSE1000 is now FULL.
+Waitlisted: Charlie for CSE1000
+Charlie waitlisted for CSE1000
+Bob drops CSE1000 -> Course promotes Charlie and updates Charlie's lists directly:
+Dropped from enrolled: Bob from CSE1000
+Promoted from waitlist: Charlie into CSE1000
+Schedule for Charlie (S3):
+  Enrolled:
+    [none]
+  Waitlisted:
+    CSE250 - Computer Architecture (OPEN)
+    CSE260 - Database Systems (CLOSED)
+Note: Course.dropStudent() directly manipulated Student.enrolledCourses!
+
+===== PART 8: REGISTRAR AS SIMPLE LOOKUP =====
+
+--- Test 24: Registrar only provides lookups, no coordination ---
+UI retrieves course via: registrar.getCourse("CSE220")
+Retrieved: CSE220 - Algorithms
+Then UI calls course.setStatusAdmin() directly - no central coordination!
+Registrar doesn't validate, mediate, or notify anyone.
+
+===== FINAL SUMMARY =====
+
+5-State System: DRAFT, OPEN, FULL, CLOSED, CANCELLED
+
+State transitions tested:
+  - Automatic: OPEN <-> FULL (based on enrollment/capacity)
+  - Admin forward: DRAFT -> OPEN/CLOSED, OPEN -> CLOSED/DRAFT
+  - Admin forward: FULL -> CLOSED (with random waitlist selection)
+  - Admin backward: CLOSED -> OPEN/DRAFT
+  - Cancellation: Any -> CANCELLED, CANCELLED -> DRAFT only
+
+=== All Test Scenarios Completed ===
