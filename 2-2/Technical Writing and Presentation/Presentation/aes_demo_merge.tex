@@ -1,0 +1,1402 @@
+\PassOptionsToPackage{table}{xcolor}
+\documentclass[aspectratio=169,24pt]{beamer}
+\setbeamerfont{normal text}{size=\fontsize{14}{16}\selectfont}
+\setbeamerfont{frametitle}{size=\fontsize{18}{20}\selectfont}
+\setbeamerfont{title}{size=\fontsize{22}{26}\selectfont}
+\makeatletter
+\renewcommand\normalsize{\@setfontsize\normalsize{14}{16}}
+\makeatother
+
+% --- BUET branding ---
+% Accent color requested: #ac1f25
+\definecolor{buetAccent}{HTML}{AC1F25}
+
+% --- Theme (aligned with reference/SIMD talk.tex) ---
+% The theme file is beamerthemeawesome.sty. Loading it as a package matches the
+% reference deck pattern and enables the Agenda + section/subsection divider slides.
+\usepackage[english, secslide, coloraccent=buetAccent]{beamerthemeawesome}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[backend=biber,style=authoryear]{biblatex}
+\usepackage{wrapfig}
+\addbibresource{aes.bib}
+
+% TikZ libraries used in several diagrams (e.g., matrix of nodes)
+\usetikzlibrary{matrix,calc}
+
+% --- Logo (top-right on all slides) ---
+\newcommand{\buetLogoFile}{aes_files/buet-logo.png}
+\newcommand{\buetLogoHeight}{0.8cm}
+\setbeamertemplate{background}{%
+	\begin{tikzpicture}[remember picture,overlay]
+		\IfFileExists{\buetLogoFile}{%
+			\node[anchor=north east,xshift=-0.35cm,yshift=-0.25cm] at (current page.north east) {%
+				\includegraphics[height=\buetLogoHeight]{\buetLogoFile}%
+			};%
+		}{}%
+	\end{tikzpicture}%
+}
+
+% --- Listings (code blocks) ---
+\definecolor{codebg}{RGB}{245,246,250}
+\definecolor{codekw}{RGB}{38,139,210}
+\definecolor{codestr}{RGB}{211,54,130}
+\definecolor{codecm}{RGB}{88,110,117}
+
+
+% --- Overlay blocks palette (theme-compatible) ---
+\colorlet{encComm}{buetAccent}
+\colorlet{encStorage}{awesomeSlateBlue}
+\colorlet{encFinance}{awesomeForestGreen}
+\colorlet{encAuth}{awesomeCharcoal}
+\colorlet{encVPN}{buetAccent!55!awesomeSlateBlue}
+\colorlet{encDRM}{buetAccent!55!awesomeForestGreen}
+
+\lstset{
+	backgroundcolor=\color{codebg},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{codekw}\bfseries,
+	stringstyle=\color{codestr},
+	commentstyle=\color{codecm}\itshape,
+	showstringspaces=false,
+	columns=fullflexible,
+	frame=single,
+	rulecolor=\color{black!10},
+	breaklines=true,
+	tabsize=2
+}
+
+\setbeamercovered{transparent=20}
+
+% --- Metadata ---
+\title[Advanced Encryption Standard]{AES encryption}
+\subtitle{Advanced Encryption Standard}
+\author{CSE 22 B1 Group 4}
+\email{2205070@ugrad.cse.buet.ac.bd 2205079@ugrad.cse.buet.ac.bd 2205068@ugrad.cse.buet.ac.bd}
+\institute{Department of Computer Science}
+\uni{Bangladesh University of Engineering and Technology}
+\location{Dhaka, Bangladesh}
+\background{aes_files/cover_bg.jpeg}
+\date\today
+
+\begin{document}
+
+% Theme defines \maketitle to include an Agenda slide (unless [notoc]).
+\maketitle
+
+\section{Introduction}
+
+\begin{frame}{Introduction}
+	\begin{wide}\only<1>{\begin{itemize}
+		\item Advanced Encryption Standard (AES) is the world's most widely used encryption algorithm
+		\item Adopted by US government in 2001 to protect sensitive information
+		\item Replaced the aging Data Encryption Standard (DES)
+		\item Used in everything from secure web browsing (HTTPS) to encrypted messaging and data storage
+		\item Foundation of modern digital security
+	\end{itemize}}
+	
+	\end{wide}
+\end{frame}
+
+\begin{frame}
+\begin{wide}
+\begin{center}
+    \textcolor{red}{\textbf{Wait!!}} \\
+		What even is encryption? What does it do, and why do we need it in the first place? This are the questions we will answer before diving into the AES algorithm itself.
+\end{center}
+\end{wide}
+\end{frame}
+
+\section{Understanding Encryption}
+
+\begin{frame}{What is Encryption?}
+	\begin{wide}
+	\only<1->{
+		\begin{block}{\textbf{Definition: }}
+			Encryption converts readable data (\textit{plaintext}) into unreadable data (\textit{ciphertext}) using an algorithm and a key.
+		\end{block}
+	}
+	\only<2->{\begin{columns}[T,onlytextwidth]
+		\column{0.55\textwidth}
+			
+			\vspace{0.5em}
+			\begin{itemize}
+				\item Hides information as secret code
+				\item Only the right key can decrypt
+			\end{itemize}
+		
+		\column{0.45\textwidth}
+			\begin{figure}
+				\centering
+				\begin{tikzpicture}[scale=0.8, transform shape]
+					% Plaintext box
+					\node[squarenode, fill=awesomeForestGreen!20, text width=3cm, align=center] (plain) at (0,0) {Plaintext\\\small ``Hello World''};
+					
+					% Encryption arrow
+					\draw[arrow] (plain) -- node[right, text width=1.8cm, align=center] {\small Encryption\\Key}
+						 node[left, text width=2.2cm, align=center] {\small Encryption\\Algorithm} (0,-2);
+					
+					% Ciphertext box
+					\node[squarenode, fill=awesomeSlateBlue!20, text width=3cm, align=center] (cipher) at (0,-2.5) {Ciphertext\\\small ``3k7m9x2...''};
+				\end{tikzpicture}
+				\caption{Encryption process}
+			\end{figure}
+	\end{columns}}
+	\end{wide}
+\end{frame}
+
+\begin{frame}{Why Encryption Matters}
+	\begin{wide}
+	\only<1-3>{\begin{itemize}
+		\onslide<1-3>{\item \textbf{Confidentiality}: Stolen data stays unreadable without the key.}
+		\onslide<2-3>{\item \textbf{Privacy}: Protects messages, personal data, and transactions from eavesdropping.}
+		\onslide<3>{\item \textbf{Compliance}: Needed for standards/laws (e.g., GDPR, HIPAA, PCI-DSS).}
+	\end{itemize}}
+	\only<4-5>{\begin{itemize}
+		\onslide<4-5>{\item \textbf{Threat defense}: Helps against breaches, MITM, and ransomware fallout.}
+		\onslide<5>{\item \textbf{Trust \& integrity}: Reduces tampering risk and increases confidence.}
+	\end{itemize}}
+	\end{wide}
+\end{frame}
+
+\begin{frame}{Application of Encryption}
+	\begin{wide}
+		\vspace{-1em}
+	\begin{columns}[T,onlytextwidth]
+		\column{0.45\textwidth}
+		\onslide<1->{%
+			\begin{beamerbox}{encComm}{Secure Communications}
+				\small HTTPS, encrypted messaging (Signal/WhatsApp)
+			\end{beamerbox}
+		}
+
+		% \vspace{0.1em}
+		\onslide<3->{%
+			\begin{beamerbox}{encFinance}{Financial Transactions}
+				\small Online banking, card payments
+			\end{beamerbox}
+		}
+
+		\onslide<5->{%
+			\begin{beamerbox}{encVPN}{Virtual Private Networks}
+				\small Encrypted traffic for privacy/security
+			\end{beamerbox}
+		}
+
+		\column{0.45\textwidth}
+		\onslide<2->{%
+			\begin{beamerbox}{encStorage}{Data Storage}
+				\small Disk + cloud encryption
+			\end{beamerbox}
+		}
+
+		\vspace{0.1em}
+		\onslide<4->{%
+			\begin{beamerbox}{encAuth}{Authentication}
+				\small Password hashing, secure tokens
+			\end{beamerbox}
+		}
+
+		\onslide<6->{%
+			\begin{beamerbox}{encDRM}{Digital Rights}
+				\small Prevents unauthorized copying/use
+			\end{beamerbox}
+		}
+	\end{columns}
+	
+	\end{wide}
+\end{frame}
+
+\begin{frame}
+\begin{wide}
+\begin{center}
+    \textcolor{red}{\textbf{Now that we understand what encryption is and why it matters, let's dive into the AES algorithm itself!}}
+\end{center}
+\end{wide}
+\end{frame}
+
+\section{Rijndael Algorithm}
+
+
+
+\begin{frame}{What is Rijndael?}
+	\begin{wide}
+	\begin{itemize}
+		\item \textbf{Rijndael} is the algorithm underlying AES (Advanced Encryption Standard).
+		\item Designed by Joan Daemen and Vincent Rijmen.
+		\item A symmetric block cipher with variable block and key sizes.
+		\item Selected as the AES standard by NIST in 2001.
+	\end{itemize}
+
+	\vspace{0.5em}
+	\begin{alertblock}{\textbf{Key Characteristics}}
+		Block size: 128 bits | Key size: 128, 192, or 256 bits
+	\end{alertblock}
+	\end{wide}
+\end{frame}
+
+\subsection{Key Expansion}
+\begin{frame}{AES Core Operations}
+	\begin{wide}
+    \begin{itemize}
+        \item \textcolor{buetAccent}{\textbf{Key Expansion}}
+        \item SubBytes
+        \item ShiftRows
+        \item MixColumns
+        \item AddRoundKey
+    \end{itemize}
+	\end{wide}
+\end{frame}
+
+
+\begin{frame}{Key Expansion Process}
+    \begin{wide}
+    
+    \begin{itemize}
+        \item Expands cipher key into round keys using mathematical transformations from 4 input words.
+        \item Number of round keys depends on key size:
+        \begin{itemize}
+            \item \Large{128-bit key: 11 round keys}
+            \item \Large{192-bit key: 13 round keys}
+            \item \Large{256-bit key: 15 round keys}
+        \end{itemize}
+        \item Uses three core functions:
+        \begin{itemize}
+            \item \textbf{SubWord}
+            \item \textbf{RotWord}
+            \item \textbf{Rcon}
+        \end{itemize}
+    \end{itemize}
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}{SubWord: S-Box Substitution in GF($2^8$)}
+    \begin{wide}
+    \textbf{Purpose:} Non-linear byte transformation providing confusion in the key schedule.\\
+
+    Each byte is mapped through the S-Box via two steps:
+    \begin{enumerate}
+        \item \textbf{Multiplicative Inverse} in Galois Field GF($2^8$)
+        \item \textbf{Affine Transformation} over GF($2$), analogous to an \textit{affine cipher} operating on bits
+    \end{enumerate}
+
+    
+    $\text{SubWord}([a_0, a_1, a_2, a_3]) = [S(a_0),\ S(a_1),\ S(a_2),\ S(a_3)]$
+
+    
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}{RotWord: Cyclic Byte Rotation}
+    \begin{wide}
+    \textbf{Purpose:} Byte position permutation that ensures each byte of Word 3 influences a different position before S-Box substitution.\\
+
+    Performs a single circular left shift by one byte position.\\
+
+    $\text{RotWord}([a_0,\ a_1,\ a_2,\ a_3]) = [a_1,\ a_2,\ a_3,\ a_0]$
+
+    
+    \begin{itemize}
+        \item Simple cyclic permutation — no arithmetic, only positional reordering
+        \item Computationally trivial; adds no performance overhead
+        \item Applied exclusively to Word 3 at each key schedule step
+    \end{itemize}
+
+
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}{Rcon: Round Constant Addition}
+    \begin{wide}
+    \textbf{Purpose:} Introduce round-dependent asymmetry to prevent identical or related round keys.\\
+
+    Each round constant is a power of $x$ in GF($2^8$), XORed into the first byte of the word only.\\
+
+    $\text{Rcon}[i] = [x^{i-1},\ 0,\ 0,\ 0]$ \quad in GF($2^8$)
+
+    
+    \begin{itemize}
+        \item Computed via \textbf{polynomial multiplication} over GF($2^8$)
+        \item Each round uses a unique, pre-defined constant
+        \item Only the first byte is affected; remaining three bytes are zero
+    \end{itemize}
+
+    \end{wide}
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]{Simplified Key Expansion Algorithm}
+    \begin{wide}
+    \begin{onlyenv}<1>
+    \begin{lstlisting}[language=Python]
+def key_expansion(key, rounds):
+    w = []
+    # Copy original key (first 4 words)
+    for i in range(4):
+        w.append(key[i])
+    
+    # Generate remaining round keys
+    for i in range(4, 4*(rounds+1)):
+        temp = w[i-1]
+        if i % 4 == 0:
+            temp = SubWord(RotWord(temp))  # Non-linear + rotation
+            temp ^= Rcon[i//4]             # XOR round constant
+        w.append(w[i-4] ^ temp)            # XOR with 4 words back
+    return w
+    \end{lstlisting}
+    \vspace{0.5em}
+    \end{onlyenv}
+    \begin{onlyenv}<2->
+        \textbf{Complete Formula:} $\text{Word}_{i+4} = \text{Word}_i \oplus g(\text{Word}_{i+3})$ where $g(w) = \text{SubWord}(\text{RotWord}(w)) \oplus \text{Rcon}[i]$ \\ \vspace{1em}
+        \textbf{Key Insight:} Each word depends on previous word and word from 4 positions back, creating avalanche effect across round keys.
+    \end{onlyenv}
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}[fragile]{Key Expansion Simulation: Step 1 - RotWord}
+    \begin{wide}
+    \centering
+    \begin{tikzpicture}[
+        scale=1.1,
+        ampersand replacement=\&,
+        grid/.style={matrix of nodes, nodes={rectangle, draw, minimum size=0.7cm, font=\ttfamily\tiny, align=center, inner sep=0pt, outer sep=0pt, text height=1.5ex, text depth=0.25ex}, column sep=-\pgflinewidth, row sep=-\pgflinewidth},
+        gbox/.style={rectangle, draw=buetAccent, lw, minimum width=3cm, minimum height=2.2cm, align=center, font=\scriptsize\bfseries, rnd, fill=buetAccent!5},
+        arrow/.style={-Latex, line width=1.2pt},
+        header/.style={roundednode, rnd, lw, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\tiny\bfseries, fill=buetAccent, text=white}
+    ]
+        % Left Grid (Word 3 - input)
+        \node[header] (h1) at (-3.5, 2.8) {Word i+3 (Input)};
+        \matrix (m1) [grid] at (-3.5, 0.8) {
+            x \\
+            y \\
+            z \\
+            b \\
+        };
+
+        % Center: RotWord operation
+        \node[gbox] (g) at (0, 0.8) {
+            \only<1>{
+                \textbf{Step 1: RotWord}\\[0.3em]
+                Cyclic left shift\\[0.5em]
+                $[x,y,z,b]$\\[0.2em]
+                $\downarrow$\\[0.2em]
+                $[y,z,b,x]$
+            }%
+            \only<2->{
+                \textbf{Step 1: RotWord}\\[0.3em]
+                {\color{awesomeForestGreen}\checkmark} Complete\\[0.5em]
+                Result shown right
+            }%
+        };
+        \node[header, minimum width=2.5cm, fill=awesomeSlateBlue] at (0, 2.8) {g-function};
+
+        % Right: After RotWord
+        \node[header] (h2) at (3.5, 2.8) {\only<1>{}\only<2->{After RotWord}};
+        \matrix (m2) [grid] at (3.5, 0.8) {
+            \only<1>{ }\only<2->{y} \\
+            \only<1>{ }\only<2->{z} \\
+            \only<1>{ }\only<2->{b} \\
+            \only<1>{ }\only<2->{x} \\
+        };
+
+        % Arrows
+        \draw[arrow] (m1.east) -- (g.west);
+        \draw[arrow, visible on=<2->] (g.east) -- (m2.west);
+    \end{tikzpicture}
+    \vspace{0.8em}
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}[fragile]{Key Expansion Simulation: Step 2 - SubWord}
+    \begin{wide}
+    \centering
+    \begin{tikzpicture}[
+        scale=1.1,
+        ampersand replacement=\&,
+        grid/.style={matrix of nodes, nodes={rectangle, draw, minimum size=0.7cm, font=\ttfamily\tiny, align=center, inner sep=0pt, outer sep=0pt, text height=1.5ex, text depth=0.25ex}, column sep=-\pgflinewidth, row sep=-\pgflinewidth},
+        gbox/.style={rectangle, draw=buetAccent, lw, minimum width=3cm, minimum height=2.2cm, align=center, font=\scriptsize\bfseries, rnd, fill=buetAccent!5},
+        arrow/.style={-Latex, line width=1.2pt},
+        header/.style={roundednode, rnd, lw, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\tiny\bfseries, fill=buetAccent, text=white}
+    ]
+        % Left Grid (After RotWord - input to SubWord)
+        \node[header] (h1) at (-3.5, 2.8) {After RotWord};
+        \matrix (m1) [grid] at (-3.5, 0.8) {
+            y \\
+            z \\
+            b \\
+            x \\
+        };
+
+        % Center: SubWord operation
+        \node[gbox] (g) at (0, 0.8) {
+            \only<1>{
+                \textbf{Step 2: SubWord}\\[0.3em]
+                S-Box substitution\\[0.3em]
+                in GF($2^8$)\\[0.5em]
+                $S([y,z,b,x])$\\[0.2em]
+                $\downarrow$\\[0.2em]
+                $[y',z',b',x']$
+            }%
+            \only<2->{
+                \textbf{Step 2: SubWord}\\[0.3em]
+                {\color{awesomeForestGreen}\checkmark} Complete\\[0.5em]
+                Each byte\\
+                transformed\\
+                via S-Box
+            }%
+        };
+        \node[header, minimum width=2.5cm, fill=awesomeSlateBlue] at (0, 2.8) {g-function};
+
+        % Right: After SubWord
+        \node[header] (h2) at (3.5, 2.8) {\only<1>{}\only<2->{After SubWord}};
+        \matrix (m2) [grid] at (3.5, 0.8) {
+            \only<1>{ }\only<2->{y'} \\
+            \only<1>{ }\only<2->{z'} \\
+            \only<1>{ }\only<2->{b'} \\
+            \only<1>{ }\only<2->{x'} \\
+        };
+
+        % Arrows
+        \draw[arrow] (m1.east) -- (g.west);
+        \draw[arrow, visible on=<2->] (g.east) -- (m2.west);
+    \end{tikzpicture}
+    \vspace{0.8em}
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}[fragile]{Key Expansion Simulation: Step 3 - \\ Rcon XOR}
+    \begin{wide}
+    \centering
+    \begin{tikzpicture}[
+        scale=1.1,
+        ampersand replacement=\&,
+        grid/.style={matrix of nodes, nodes={rectangle, draw, minimum size=0.7cm, font=\ttfamily\tiny, align=center, inner sep=0pt, outer sep=0pt, text height=1.5ex, text depth=0.25ex}, column sep=-\pgflinewidth, row sep=-\pgflinewidth},
+        gbox/.style={rectangle, draw=buetAccent, lw, minimum width=3cm, minimum height=2.2cm, align=center, font=\scriptsize\bfseries, rnd, fill=buetAccent!5},
+        arrow/.style={-Latex, line width=1.2pt},
+        header/.style={roundednode, rnd, lw, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\tiny\bfseries, fill=buetAccent, text=white}
+    ]
+        % Left Grid (After SubWord - input to Rcon)
+        \node[header] (h1) at (-3.5, 2.8) {After SubWord};
+        \matrix (m1) [grid] at (-3.5, 0.8) {
+            y' \\
+            z' \\
+            b' \\
+            x' \\
+        };
+
+        % Center: Rcon XOR operation
+        \node[gbox] (g) at (0, 0.8) {
+            \only<1>{
+                \textbf{Step 3: Rcon XOR}\\[0.3em]
+                Add round constant\\[0.5em]
+                $[y',z',b',x']$\\[0.2em]
+                $\oplus$\\[0.2em]
+                $[\text{RC}_i, 0, 0, 0]$\\[0.2em]
+                $\downarrow$\\[0.2em]
+                $[a,b,c,d]$
+            }%
+            \only<2->{
+                \textbf{Step 3: Rcon XOR}\\[0.3em]
+                {\color{awesomeForestGreen}\checkmark} Complete\\[0.5em]
+                g-function\\
+                complete!\\[0.3em]
+                Result: $[a,b,c,d]$
+            }%
+        };
+        \node[header, minimum width=2.5cm, fill=awesomeSlateBlue] at (0, 2.8) {g-function};
+
+        % Right: After Rcon (g-function result)
+        \node[header] (h2) at (3.5, 2.8) {\only<1>{}\only<2->{g-function Output}};
+        \matrix (m2) [grid] at (3.5, 0.8) {
+            \only<1>{ }\only<2->{a} \\
+            \only<1>{ }\only<2->{b} \\
+            \only<1>{ }\only<2->{c} \\
+            \only<1>{ }\only<2->{d} \\
+        };
+
+        % Arrows
+        \draw[arrow] (m1.east) -- (g.west);
+        \draw[arrow, visible on=<2->] (g.east) -- (m2.west);
+    \end{tikzpicture}
+    \vspace{0.8em}
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}[fragile]{Key Expansion Simulation: Step 4 - Generate New Word}
+    \begin{wide}
+    \centering
+    \begin{tikzpicture}[
+        scale=1.1,
+        ampersand replacement=\&,
+        grid/.style={matrix of nodes, nodes={rectangle, draw, minimum size=0.7cm, font=\ttfamily\tiny, align=center, inner sep=0pt, outer sep=0pt, text height=1.5ex, text depth=0.25ex}, column sep=-\pgflinewidth, row sep=-\pgflinewidth},
+        gbox/.style={rectangle, draw=buetAccent, lw, minimum width=3cm, minimum height=2.2cm, align=center, font=\scriptsize\bfseries, rnd, fill=buetAccent!5},
+        arrow/.style={-Latex, line width=1.2pt},
+        header/.style={roundednode, rnd, lw, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\tiny\bfseries, fill=buetAccent, text=white}
+    ]
+        % Left Grid (g-function output)
+        \node[header] (h1) at (-3.5, 2.8) {g(Word i+3)};
+        \matrix (m1) [grid] at (-3.5, 0.8) {
+            a \\
+            b \\
+            c \\
+            d \\
+        };
+
+        % Center: XOR operation with Word 0
+        \node[gbox] (g) at (0, 0.8) {
+            \only<1>{
+                \textbf{Final Step}\\[0.3em]
+                XOR with Word 0\\[0.5em]
+                $[a,b,c,d]$\\[0.2em]
+                $\oplus$\\[0.2em]
+                $[A,z,k,m]$\\[0.2em]
+                $\downarrow$\\[0.2em]
+                $\text{Word 4}$
+            }%
+            \only<2->{
+                \textbf{Final Step}\\[0.3em]
+                {\color{awesomeForestGreen}\checkmark} Complete\\[0.5em]
+                New round key\\
+                word generated!
+            }%
+        };
+        \node[header, minimum width=2.5cm, fill=awesomeForestGreen] at (0, 2.8) {XOR with Word 0};
+
+        % Right: Word 0 → New Word 4
+        \node[header] (h2) at (3.5, 2.8) {\only<1>{Word i}\only<2->{New Word i+4}};
+        \matrix (m2) [grid] at (3.5, 0.8) {
+            \only<1>{A}\only<2->{A$\oplus$a} \\
+            \only<1>{z}\only<2->{z$\oplus$b} \\
+            \only<1>{k}\only<2->{k$\oplus$c} \\
+            \only<1>{m}\only<2->{m$\oplus$d} \\
+        };
+
+        % Arrows
+        \draw[arrow] (m1.east) -- (g.west);
+        \draw[arrow, visible on=<1>] (m2.west) -- (g.east);
+        \draw[arrow, visible on=<2->, buetAccent] (g.east) -- (m2.west);
+        
+        % XOR symbol
+        \node[font=\Large\bfseries, text=buetAccent, visible on=<1>] at (2.8, 1.1) {$\oplus$};
+    \end{tikzpicture}
+    \vspace{0.8em}
+    \end{wide}
+\end{frame}
+
+\subsection{SubBytes}
+\begin{frame}{AES Core Operations}
+	\begin{wide}
+    \begin{itemize}
+        \item Key Expansion
+        \item \textcolor{buetAccent}{\textbf{SubBytes}}
+        \item ShiftRows
+        \item MixColumns
+        \item AddRoundKey
+    \end{itemize}
+	\end{wide}
+\end{frame}
+
+
+\begin{frame}{SubBytes: Non-linear Substitution}
+	\begin{wide}
+	\begin{itemize}
+		\item The first step in each round of AES encryption.
+		\item Provides \textbf{confusion} by performing byte-by-byte substitution.
+		\item Uses a fixed \textbf{S-Box} (Substitution Box) lookup table.
+		\item Each byte $b_{i,j}$ in the State Matrix is replaced by $S(b_{i,j})$.
+	\end{itemize}
+	\end{wide}
+\end{frame}
+
+
+
+\begin{frame}{Forming the State Matrix}
+	\begin{wide}
+	\centering
+	\only<1>{The 16-byte block starts as a linear sequence of characters.}
+	\only<2>{The bytes are then arranged into a 4$\times$4 \textbf{State Matrix}.}
+
+	\vspace{1.5em}
+
+	\begin{tikzpicture}[
+		scale=0.8,
+		cell/.style={rectangle, draw=black, lw, minimum size=1cm, font=\ttfamily\large, align=center},
+		label/.style={font=\tiny, text=darkgray}
+	]
+		% Overlay 1: Linear Array (A...P)
+		\foreach \i/\char in {0/A, 1/B, 2/C, 3/D, 4/E, 5/F, 6/G, 7/H, 8/I, 9/J, 10/K, 11/L, 12/M, 13/N, 14/O, 15/P} {
+			\node[cell, visible on=<1>] (lin\i) at (\i*1.05 - 7.8, 0) {\char};
+		}
+
+		% Overlay 2: Matrix (A...P)
+		% Column 0: A, B, C, D
+		\node[cell, fill=buetAccent!10, visible on=<2>] (mat0) at (-1.5, 1.5) {A};
+		\node[cell, fill=buetAccent!10, visible on=<2>] (mat1) at (-1.5, 0.5) {B};
+		\node[cell, fill=buetAccent!10, visible on=<2>] (mat2) at (-1.5, -0.5) {C};
+		\node[cell, fill=buetAccent!10, visible on=<2>] (mat3) at (-1.5, -1.5) {D};
+
+		% Column 1: E, F, G, H
+		\node[cell, fill=awesomeSlateBlue!10, visible on=<2>] (mat4) at (-0.5, 1.5) {E};
+		\node[cell, fill=awesomeSlateBlue!10, visible on=<2>] (mat5) at (-0.5, 0.5) {F};
+		\node[cell, fill=awesomeSlateBlue!10, visible on=<2>] (mat6) at (-0.5, -0.5) {G};
+		\node[cell, fill=awesomeSlateBlue!10, visible on=<2>] (mat7) at (-0.5, -1.5) {H};
+
+		% Column 2: I, J, K, L
+		\node[cell, fill=awesomeForestGreen!10, visible on=<2>] (mat8) at (0.5, 1.5) {I};
+		\node[cell, fill=awesomeForestGreen!10, visible on=<2>] (mat9) at (0.5, 0.5) {J};
+		\node[cell, fill=awesomeForestGreen!10, visible on=<2>] (mat10) at (0.5, -0.5) {K};
+		\node[cell, fill=awesomeForestGreen!10, visible on=<2>] (mat11) at (0.5, -1.5) {L};
+
+		% Column 3: M, N, O, P
+		\node[cell, fill=awesomeCharcoal!10, visible on=<2>] (mat12) at (1.5, 1.5) {M};
+		\node[cell, fill=awesomeCharcoal!10, visible on=<2>] (mat13) at (1.5, 0.5) {N};
+		\node[cell, fill=awesomeCharcoal!10, visible on=<2>] (mat14) at (1.5, -0.5) {O};
+		\node[cell, fill=awesomeCharcoal!10, visible on=<2>] (mat15) at (1.5, -1.5) {P};
+
+		% Draw "drag" arrows on overlay 2
+		\draw[->, >=stealth, dashed, gray, visible on=<2>] (-7.8, 0) to[out=90, in=180] (mat0);
+		\draw[->, >=stealth, dashed, gray, visible on=<2>] (7.8, 0) to[out=90, in=0] (mat15);
+
+	\end{tikzpicture}
+	\end{wide}
+\end{frame}
+
+\begin{frame}{SubBytes: Substitution Animation}
+	\begin{wide}
+	Each character is substituted using a fixed lookup table (S-Box).
+
+	\vspace{1.5em}
+
+	\begin{columns}[T,onlytextwidth]
+		\column{0.45\textwidth}
+		\centering
+		\textbf{State Matrix} \\
+		\vspace{1em}
+		\begin{tikzpicture}[scale=0.75]
+			\foreach \x/\y/\base/\new/\vis in {
+				0/3/A/K/{\only<1>{A}\only<2->{K}},
+				1/3/E/S/{\only<1-3>{E}\only<4->{S}},
+				2/3/I/R/{\only<1-3>{I}\only<4->{R}},
+				3/3/M/Q/{\only<1-3>{M}\only<4->{Q}},
+				0/2/B/V/{\only<1-2>{B}\only<3->{V}},
+				1/2/F/T/{\only<1-3>{F}\only<4->{T}},
+				2/2/J/W/{\only<1-3>{J}\only<4->{W}},
+				3/2/N/U/{\only<1-3>{N}\only<4->{U}},
+				0/1/C/X/{\only<1-3>{C}\only<4->{X}},
+				1/1/G/Y/{\only<1-3>{G}\only<4->{Y}},
+				2/1/K/Z/{\only<1-3>{K}\only<4->{Z}},
+				3/1/O/A/{\only<1-3>{O}\only<4->{A}},
+				0/0/D/L/{\only<1-3>{D}\only<4->{L}},
+				1/0/H/M/{\only<1-3>{H}\only<4->{M}},
+				2/0/L/N/{\only<1-3>{L}\only<4->{N}},
+				3/0/P/O/{\only<1-3>{P}\only<4->{O}}} {
+				\node[draw, minimum size=0.9cm, fill=white] (c\x\y) at (\x, \y) {\vis};
+			}
+
+			% Highlight A -> K on click 2
+			\node[draw, minimum size=0.9cm, fill=buetAccent!30, visible on=<2>] at (0,3) {K};
+			% Highlight B -> V on click 3
+			\node[draw, minimum size=0.9cm, fill=awesomeSlateBlue!30, visible on=<3>] at (0,2) {V};
+
+		\end{tikzpicture}
+
+		\column{0.55\textwidth}
+		\centering
+		\textbf{S-Box (Constant Mapping)} \\
+		\vspace{1em}
+		\small
+		\renewcommand{\arraystretch}{1.2}
+		\begin{tabular}{|c|c|c|c|c|c|}
+			\hline
+			\textbf{In} & \textbf{Out} & \textbf{In} & \textbf{Out} & \textbf{In} & \textbf{Out} \\ \hline
+			A & \only<2>{\cellcolor{buetAccent!30}}K & G & Y & M & Q \\ \hline
+			B & \only<3>{\cellcolor{awesomeSlateBlue!30}}V & H & M & N & U \\ \hline
+			C & X & I & R & O & A \\ \hline
+			D & L & J & W & P & O \\ \hline
+			E & S & K & Z & \dots & \dots \\ \hline
+			F & T & L & N & \dots & \dots \\ \hline
+		\end{tabular}
+
+	\end{columns}
+	\end{wide}
+\end{frame}
+
+\subsection{ShiftRows   }
+\begin{frame}{AES Core Operations}
+	\begin{wide}
+    \begin{itemize}
+        \item Key Expansion
+        \item SubBytes
+        \item \textcolor{buetAccent}{\textbf{ShiftRows}}
+        \item MixColumns
+        \item AddRoundKey
+    \end{itemize}
+	\end{wide}
+\end{frame}
+
+
+\begin{frame}{ShiftRows: Diffusion}
+	\begin{wide}
+	\begin{itemize}
+		\item This step provides ``diffusion'' by moving data around horizontally.
+		\item \textbf{Purpose:} To ensure that bytes from one column don't stay in that same column.
+		\item \textbf{Process:} AES treats data as a $4 \times 4$ grid.
+		\begin{itemize}
+			\item The 1st row stays put.
+			\item The 2nd row shifts 1 position to the left.
+			\item The 3rd row shifts 2 positions to the left.
+			\item The 4th row shifts 3 positions to the left.
+		\end{itemize}
+	\end{itemize}
+	\end{wide}
+\end{frame}
+
+\begin{frame}{ShiftRows: Animation}
+	\begin{wide}
+	\centering
+	\begin{tikzpicture}[
+		scale=1.1,
+		cell/.style={rectangle, draw=black, lw, minimum size=1.1cm, font=\ttfamily\large, align=center},
+		shifted/.style={fill=buetAccent!20}
+	]
+		% Row 0: K, S, R, Q (Constant)
+		\node[cell] (r0c0) at (0, 3) {K};
+		\node[cell] (r0c1) at (1.2, 3) {S};
+		\node[cell] (r0c2) at (2.4, 3) {R};
+		\node[cell] (r0c3) at (3.6, 3) {Q};
+
+		% Row 1: V, T, W, U -> T, W, U, V
+		\node[cell] (r1c0) at (0, 1.8) {\only<1>{V}\only<2->{T}};
+		\node[cell] (r1c1) at (1.2, 1.8) {\only<1>{T}\only<2->{W}};
+		\node[cell] (r1c2) at (2.4, 1.8) {\only<1>{W}\only<2->{U}};
+		\node<1>[cell] (r1c3) at (3.6, 1.8) {U};
+		\node<2->[cell, shifted] (r1c3) at (3.6, 1.8) {V};
+
+		% Row 2: X, Y, Z, A -> Z, A, X, Y
+		\node[cell] (r2c0) at (0, 0.6) {\only<1-2>{X}\only<3->{Z}};
+		\node[cell] (r2c1) at (1.2, 0.6) {\only<1-2>{Y}\only<3->{A}};
+		\node<1-2>[cell] (r2c2) at (2.4, 0.6) {Z};
+		\node<3->[cell, shifted] (r2c2) at (2.4, 0.6) {X};
+		\node<1-2>[cell] (r2c3) at (3.6, 0.6) {A};
+		\node<3->[cell, shifted] (r2c3) at (3.6, 0.6) {Y};
+
+		% Row 3: L, M, N, O -> O, L, M, N
+		\node[cell] (r3c0) at (0, -0.6) {\only<1-3>{L}\only<4->{O}};
+		\node<1-3>[cell] (r3c1) at (1.2, -0.6) {M};
+		\node<4->[cell, shifted] (r3c1) at (1.2, -0.6) {L};
+		\node<1-3>[cell] (r3c2) at (2.4, -0.6) {N};
+		\node<4->[cell, shifted] (r3c2) at (2.4, -0.6) {M};
+		\node<1-3>[cell] (r3c3) at (3.6, -0.6) {O};
+		\node<4->[cell, shifted] (r3c3) at (3.6, -0.6) {N};
+
+		% Labels
+		\node[anchor=east, font=\small] at (-0.8, 3) {Row 0:};
+		\node[anchor=east, font=\small] at (-0.8, 1.8) {Row 1:};
+		\node[anchor=east, font=\small] at (-0.8, 0.6) {Row 2:};
+		\node[anchor=east, font=\small] at (-0.8, -0.6) {Row 3:};
+
+		% Shift Arrows (circular logic)
+		\draw[->, >=stealth, buetAccent, bend left=45, visible on=<2>] (r1c0.north) to (r1c3.north);
+		\draw[->, >=stealth, buetAccent, bend left=45, visible on=<3>] (r2c0.north) to (r2c2.north);
+		\draw[->, >=stealth, buetAccent, bend left=45, visible on=<3>] (r2c1.north) to (r2c3.north);
+		\draw[->, >=stealth, buetAccent, bend left=45, visible on=<4>] (r3c0.north) to (r3c1.north);
+		\draw[->, >=stealth, buetAccent, bend left=45, visible on=<4>] (r3c0.north) to (r3c2.north);
+		\draw[->, >=stealth, buetAccent, bend left=45, visible on=<4>] (r3c0.north) to (r3c3.north);
+
+	\end{tikzpicture}
+	\end{wide}
+\end{frame}
+
+\subsection{MixColumns}
+\begin{frame}{AES Core Operations}
+	\begin{wide}
+    \begin{itemize}
+        \item Key Expansion
+        \item SubBytes
+        \item ShiftRows
+        \item \textcolor{buetAccent}{\textbf{MixColumns}}
+        \item AddRoundKey
+    \end{itemize}
+	\end{wide}
+\end{frame}
+
+
+\begin{frame}{MixColumns: Theory}
+	\begin{wide}
+	\begin{itemize}
+		\item MixColumns is a linear transformation that operates on the columns of the state.
+		\item It provides vertical diffusion, ensuring that each byte in a column affects all four bytes of the resulting column.
+		\item Each column is treated as a polynomial over $GF(2^8)$ and multiplied by a fixed matrix.
+	\end{itemize}
+	\end{wide}
+\end{frame}
+
+\begin{frame}{MixColumns: Vertical Diffusion}
+	\begin{wide}
+	\centering
+	\begin{tikzpicture}[
+		scale=1.1,
+		cell/.style={rectangle, draw=black, lw, minimum size=0.9cm, font=\ttfamily\small, align=center},
+		highlight/.style={fill=buetAccent!20},
+		colborder/.style={draw=red, line width=1.5pt}
+	]
+		% Column 0
+		\node<1-3>[cell] (c0r0) at (0, 3) {K};
+		\node<4-10>[cell, fill=buetAccent!20] (c0r0) at (0, 3) {B}; % Highlighted while swapping first
+		\node<11->[cell] (c0r0) at (0, 3) {B};
+
+		\node<1-5>[cell] (c0r1) at (0, 2.1) {T};
+		\node<6-10>[cell, fill=buetAccent!20] (c0r1) at (0, 2.1) {C};
+		\node<11->[cell] (c0r1) at (0, 2.1) {C};
+
+		\node<1-5>[cell] (c0r2) at (0, 1.2) {Z};
+		\node<6-10>[cell, fill=buetAccent!20] (c0r2) at (0, 1.2) {D};
+		\node<11->[cell] (c0r2) at (0, 1.2) {D};
+
+		\node<1-5>[cell] (c0r3) at (0, 0.3) {O};
+		\node<6-10>[cell, fill=buetAccent!20] (c0r3) at (0, 0.3) {E};
+		\node<11->[cell] (c0r3) at (0, 0.3) {E};
+
+		% Column 1
+		\node<1-7>[cell] (c1r0) at (1.2, 3) {S};
+		\node<8>[cell, fill=buetAccent!20] (c1r0) at (1.2, 3) {S}; % Colored first
+		\node<9-10>[cell, fill=buetAccent!20] (c1r0) at (1.2, 3) {G}; % Swapped
+		\node<11->[cell] (c1r0) at (1.2, 3) {G};
+
+		\node<1-7>[cell] (c1r1) at (1.2, 2.1) {W};
+		\node<8>[cell, fill=buetAccent!20] (c1r1) at (1.2, 2.1) {W};
+		\node<9-10>[cell, fill=buetAccent!20] (c1r1) at (1.2, 2.1) {H};
+		\node<11->[cell] (c1r1) at (1.2, 2.1) {H};
+
+		\node<1-7>[cell] (c1r2) at (1.2, 1.2) {A};
+		\node<8>[cell, fill=buetAccent!20] (c1r2) at (1.2, 1.2) {A};
+		\node<9-10>[cell, fill=buetAccent!20] (c1r2) at (1.2, 1.2) {P};
+		\node<11->[cell] (c1r2) at (1.2, 1.2) {P};
+
+		\node<1-7>[cell] (c1r3) at (1.2, 0.3) {L};
+		\node<8>[cell, fill=buetAccent!20] (c1r3) at (1.2, 0.3) {L};
+		\node<9-10>[cell, fill=buetAccent!20] (c1r3) at (1.2, 0.3) {Q};
+		\node<11->[cell] (c1r3) at (1.2, 0.3) {Q};
+
+		% Column 2
+		\node<1-7>[cell] (c2r0) at (2.4, 3) {R};
+		\node<8>[cell, fill=buetAccent!20] (c2r0) at (2.4, 3) {R};
+		\node<9-10>[cell, fill=buetAccent!20] (c2r0) at (2.4, 3) {X};
+		\node<11->[cell] (c2r0) at (2.4, 3) {X};
+
+		\node<1-7>[cell] (c2r1) at (2.4, 2.1) {U};
+		\node<8>[cell, fill=buetAccent!20] (c2r1) at (2.4, 2.1) {U};
+		\node<9-10>[cell, fill=buetAccent!20] (c2r1) at (2.4, 2.1) {Y};
+		\node<11->[cell] (c2r1) at (2.4, 2.1) {Y};
+
+		\node<1-7>[cell] (c2r2) at (2.4, 1.2) {X};
+		\node<8>[cell, fill=buetAccent!20] (c2r2) at (2.4, 1.2) {X};
+		\node<9-10>[cell, fill=buetAccent!20] (c2r2) at (2.4, 1.2) {Z};
+		\node<11->[cell] (c2r2) at (2.4, 1.2) {Z};
+
+		\node<1-7>[cell] (c2r3) at (2.4, 0.3) {M};
+		\node<8>[cell, fill=buetAccent!20] (c2r3) at (2.4, 0.3) {M};
+		\node<9-10>[cell, fill=buetAccent!20] (c2r3) at (2.4, 0.3) {W};
+		\node<11->[cell] (c2r3) at (2.4, 0.3) {W};
+
+		% Column 3
+		\node<1-7>[cell] (c3r0) at (3.6, 3) {Q};
+		\node<8>[cell, fill=buetAccent!20] (c3r0) at (3.6, 3) {Q};
+		\node<9-10>[cell, fill=buetAccent!20] (c3r0) at (3.6, 3) {P};
+		\node<11->[cell] (c3r0) at (3.6, 3) {P};
+
+		\node<1-7>[cell] (c3r1) at (3.6, 2.1) {V};
+		\node<8>[cell, fill=buetAccent!20] (c3r1) at (3.6, 2.1) {V};
+		\node<9-10>[cell, fill=buetAccent!20] (c3r1) at (3.6, 2.1) {R};
+		\node<11->[cell] (c3r1) at (3.6, 2.1) {R};
+
+		\node<1-7>[cell] (c2r2) at (3.6, 1.2) {Y};
+		\node<8>[cell, fill=buetAccent!20] (c2r2) at (3.6, 1.2) {Y};
+		\node<9-10>[cell, fill=buetAccent!20] (c2r2) at (3.6, 1.2) {S};
+		\node<11->[cell] (c2r2) at (3.6, 1.2) {S};
+
+		\node<1-7>[cell] (c3r3) at (3.6, 0.3) {N};
+		\node<8>[cell, fill=buetAccent!20] (c3r3) at (3.6, 0.3) {N};
+		\node<9-10>[cell, fill=buetAccent!20] (c3r3) at (3.6, 0.3) {T};
+		\node<11->[cell] (c3r3) at (3.6, 0.3) {T};
+
+		% Red border for first column (Step 2-6)
+		\draw<2-6>[colborder] (-0.5, 3.5) rectangle (0.5, -0.2);
+
+		% Equations (Step 3-6)
+		\node<3-6>[anchor=west, font=\scriptsize, align=left] at (5.0, 1.6) {
+			$r'_1 = (2 \cdot r_1) \oplus (3 \cdot r_2) \oplus (1 \cdot r_3) \oplus (1 \cdot r_4)$ \\
+			$r'_2 = (1 \cdot r_1) \oplus (2 \cdot r_2) \oplus (3 \cdot r_3) \oplus (1 \cdot r_4)$ \\
+			$r'_3 = (1 \cdot r_1) \oplus (1 \cdot r_2) \oplus (2 \cdot r_3) \oplus (3 \cdot r_4)$ \\
+			$r'_4 = (3 \cdot r_1) \oplus (1 \cdot r_2) \oplus (1 \cdot r_3) \oplus (2 \cdot r_4)$
+		};
+
+	\end{tikzpicture}
+	\end{wide}
+\end{frame}
+
+\subsection{AddRoundKey}
+\begin{frame}{AES Core Operations}
+	\begin{wide}
+    \begin{itemize}
+        \item Key Expansion
+        \item SubBytes
+        \item ShiftRows
+        \item MixColumns
+        \item \textcolor{buetAccent}{\textbf{AddRoundKey}}
+    \end{itemize}
+	\end{wide}
+\end{frame}
+
+
+\begin{frame}{AddRoundKey: Final Transformation}
+	\begin{wide}
+	\begin{itemize}
+		\item Now we will combine the \textbf{key} and the \textbf{data} from the previous slides.
+		\item This is done using a bitwise \textbf{XOR} operation between the State Matrix and the Round Key.
+		\item \textbf{Formula:} \[ \text{\textbf{Data}} \oplus \text{\textbf{Key}} = \text{Ciphertext} \]
+		\item This step provides ``confusion'' by mixing the key with the data.
+	\end{itemize}
+	\end{wide}
+\end{frame}
+
+\begin{frame}{The Round Process (Scramble)}
+	\begin{wide}
+    \begin{columns}[c,onlytextwidth]
+        \column{0.5\textwidth}
+        \centering
+        \begin{tikzpicture}[
+            stepnode/.style={roundednode, rnd, lw, minimum width=4cm, minimum height=0.8cm, align=center, font=\bfseries\large, fill=buetAccent!10, draw=buetAccent},
+            box/.style={rectangle, draw=buetAccent, lw, fill=buetAccent!2, minimum width=4.5cm, minimum height=3.2cm, rnd}
+        ]
+            % The outer box
+            \node[box] (frame) at (0,0) {};
+            
+            % The three steps, equally spaced
+            \node[stepnode] (s1) at (0, 0.9) {SubBytes};
+            \node[stepnode] (s2) at (0, 0) {ShiftRows};
+            \node[stepnode] (s3) at (0, -0.9) {MixColumns};
+        \end{tikzpicture}
+
+        \column{0.5\textwidth}
+        \flushleft
+        \Large\textbf{Together, let's call it \textcolor{buetAccent}{Scramble}}
+    \end{columns}
+	\end{wide}
+\end{frame}
+
+\subsection{Full AES Flow Diagram}
+
+\begin{frame}{Full AES Flow Diagram}
+	\begin{wide}
+	\begin{center}
+    \vspace{-0.1em}
+	\begin{tikzpicture}[
+		box/.style={rectangle, draw, lw, minimum width=1.4cm, minimum height=0.6cm, font=\tiny\bfseries},
+		op/.style={circle, draw, lw, inner sep=1pt, font=\small},
+		arrow/.style={-Latex, line width=0.8pt},
+		scramble_node/.style={rectangle, draw=buetAccent, fill=buetAccent!10, rounded corners, minimum width=1.4cm, minimum height=0.6cm, font=\tiny\bfseries}
+	]
+		% --- Row 1 ---
+		\node[box, visible on=<1->] (data1) at (0, 0) {Original Data};
+		\node[op, right=0.6cm of data1, visible on=<2->] (xor0) {$\oplus$};
+		\node[box, below=0.5cm of xor0, visible on=<3->] (k0) {keyOriginal};
+		\draw[arrow, visible on=<2->] (data1) -- (xor0);
+		\draw[arrow, visible on=<3->] (k0) -- (xor0);
+
+		\node[scramble_node, right=0.6cm of xor0, visible on=<4->] (s1) {Scramble};
+		\node[op, right=0.6cm of s1, visible on=<5->] (xor1) {$\oplus$};
+		\node[box, below=0.5cm of xor1, visible on=<6->] (k1) {key1};
+		\draw[arrow, visible on=<4->] (xor0) -- (s1);
+		\draw[arrow, visible on=<5->] (s1) -- (xor1);
+		\draw[arrow, visible on=<6->] (k1) -- (xor1);
+
+		\node[scramble_node, right=0.6cm of xor1, visible on=<7->] (s2) {Scramble};
+		\node[op, right=0.6cm of s2, visible on=<8->] (xor2) {$\oplus$};
+		\node[box, below=0.5cm of xor2, visible on=<9->] (k2) {key2};
+		\draw[arrow, visible on=<7->] (xor1) -- (s2);
+		\draw[arrow, visible on=<8->] (s2) -- (xor2);
+		\draw[arrow, visible on=<9->] (k2) -- (xor2);
+
+		% Connection to row 2
+		\node[right=0.2cm of xor2, visible on=<10->] (dots1) {\dots};
+		\draw[arrow, visible on=<10->] (xor2) -- (dots1);
+
+		% --- Row 2 ---
+		% Align s10 below s1, so key10 is below key1
+        \node[scramble_node, below=1.4cm of s1, visible on=<11->] (s10) {Scramble};
+		\node[op, right=0.6cm of s10, visible on=<12->] (xor10) {$\oplus$};
+		\node[box, below=0.5cm of xor10, visible on=<13->] (k10) {key10};
+		\draw[arrow, visible on=<12->] (s10) -- (xor10);
+		\draw[arrow, visible on=<13->] (k10) -- (xor10);
+
+		% Ellipsis and arrow before s10
+		\node[left=0.4cm of s10, visible on=<11->] (dots2) {\dots};
+		\draw[arrow, visible on=<11->] (dots2) -- (s10);
+
+		\node[right=0.6cm of xor10, font=\Large\bfseries, visible on=<14->] (eq) {$=$};
+		\node[box, right=0.4cm of eq, fill=awesomeForestGreen!20, visible on=<15->] (res) {Encrypted Result};
+		\draw[arrow, visible on=<14->] (xor10) -- (eq);
+
+	\end{tikzpicture}
+    \end{center}
+    
+    \only<15>{\begin{block}
+        {\textbf{Note:} In the last round, the MixColumns step is omitted. The reason is that MixColumns does not provide additional security in the final round and can be skipped to optimize performance.}
+        \end{block}}
+	\end{wide}
+\end{frame}
+
+\section{Analysis of AES}
+
+
+\begin{frame}{\hspace{1.5em}AES vs Good Encryption}
+    \begin{wide}
+    AES perfectly aligns with every criterion for a robust encryption standard:
+
+    \vspace{1em}
+    \uncover<1->{\textbf{Public Design:} Open NIST competition ensured global expert review.}
+
+    \vspace{0.3em}
+    \uncover<2->{\textbf{Shannon's Principles:} Exceptional confusion and diffusion via S-Boxes and MixColumns.}
+
+    \vspace{0.3em}
+    \uncover<3->{\textbf{Key Space:} 128--256-bit keys resist all brute-force search.}
+
+    \vspace{0.3em}
+    \uncover<4->{\textbf{Attack Resistance:} Resilient against differential, linear, and related-key attacks.}
+
+    \vspace{0.3em}
+    \uncover<5->{\textbf{Efficiency:} High-speed on IoT, mobile, and server hardware alike.}
+    \end{wide}
+\end{frame}
+
+
+
+
+
+\begin{frame}{AES: A Public, Well-Specified Design}
+    \begin{wide}
+        A good standard is openly documented so experts can review it, implement it consistently, and find flaws early.
+
+        \vspace{1em}
+        \uncover<1->{\textbf{The Catalyst:} In 1997, NIST sought a replacement for the aging DES cipher.}
+
+        \vspace{0.4em}
+        \uncover<2->{\textbf{The Crucible:} NIST launched a 5-year open global competition with 15 candidates.}
+
+        \vspace{0.4em}
+        \uncover<3->{\textbf{The Victory:} In 2000, \textit{Rijndael} won, defeating submissions from IBM and RSA.}
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}{Global Trust Through Transparency}
+    \begin{wide}
+        \vspace{1em}
+        \uncover<1->{\textbf{Proven Standard:} Published as FIPS 197 and NSA-approved for `Top Secret' data.}
+
+        \vspace{1em}
+        \uncover<2->{
+        \begin{block}{\textbf{Kerckhoffs's Principle}}
+            A cryptosystem must be secure even if everything except the key is public. AES earns trust not by hiding its mechanics, but by surviving decades of open peer review.
+        \end{block}
+        }
+    \end{wide}
+\end{frame}
+
+
+
+
+
+\begin{frame}{Shannon's Principle of Confusion}
+    \begin{wide}
+    \begin{columns}[T,onlytextwidth]
+        \column{0.55\textwidth}
+            \vspace{-0.5em}
+            Make the plaintext--ciphertext--key relationship hard to predict.
+
+            \vspace{0.5em}
+            \onslide<1->{AES achieves confusion through \textbf{SubBytes}: a non-linear S-Box based on multiplicative inverses in GF($2^8$).}\\[1em]
+
+            \onslide<2->{
+            \begin{block}{\textbf{Result}}
+                Complex key--ciphertext relationships thwart all pattern-based attacks.
+            \end{block}
+            }
+
+        \column{0.45\textwidth}
+            \centering
+            \vspace{1.5em}
+            \begin{tikzpicture}[scale=0.95, transform shape]
+                \node[roundednode, fill=awesomeSlateBlue!20, minimum width=2.6cm] (pt) at (0,4.1) {\small Plaintext};
+                \node[roundednode, fill=awesomeSlateBlue!20, minimum width=2.6cm] (k)  at (3,4.1) {\small Key};
+
+                \node[roundednode, align=center, fill=buetAccent!70, text=white,
+                      minimum width=3.0cm, minimum height=1.25cm] (sbox) at (0,1.7)
+                      {\textbf{S-Box}\\[-1pt]\scriptsize Non-linear mapping};
+
+                \node[roundednode, fill=awesomeForestGreen!35, minimum width=2.6cm] (ct) at (0,0.2) {\small Ciphertext};
+
+                \draw[arrow] (pt) -- (sbox);
+                \draw[arrow] (k)  -- (sbox);
+                \draw[arrow] (sbox) -- (ct);
+
+                \node[roundednode, align=left, fill=white, draw=buetAccent, text=buetAccent,
+                      font=\tiny, inner sep=2.2pt] at (3.0,1.7)
+                      {\shortstack[l]{Goal:\\Hide key--ciphertext\\relationships}};
+            \end{tikzpicture}
+    \end{columns}
+    \end{wide}
+\end{frame}
+
+
+\begin{frame}{Shannon's Principle of Diffusion}
+    \begin{wide}
+    \begin{columns}[T,onlytextwidth]
+        \column{0.55\textwidth}
+            \vspace{-0.5em}
+            Small input changes must spread widely throughout the output.
+
+            \vspace{0.5em}
+            \onslide<1->{AES achieves diffusion via \textbf{ShiftRows} and \textbf{MixColumns}, ensuring every plaintext bit influences many ciphertext bits.}\\[1em]
+
+            \onslide<2->{
+            \begin{alertblock}{\textbf{Avalanche Effect}}
+                Flipping a single plaintext bit alters $\approx$50\% of the resulting ciphertext bits.
+            \end{alertblock}
+            }
+
+        \column{0.45\textwidth}
+            \centering
+            \vspace{2em}
+            \begin{tikzpicture}[scale=0.92, transform shape]
+                \node[font=\scriptsize, anchor=east] at (-0.35,3.60) {Plaintext:};
+                \foreach \i/\b in {0/1,1/0,2/1,3/0,4/1,5/1,6/0,7/1} {
+                    \node[circle, draw=black!30, fill=white, inner sep=2pt, font=\tiny]
+                        (in\i) at (\i*0.42,3.60) {\b};
+                }
+
+                \node[roundednode, fill=buetAccent!70, text=white,
+                      minimum width=3.2cm, minimum height=0.75cm] (diff) at (1.47,2.45)
+                      {\small Diffusion Layer};
+
+                \node[font=\scriptsize, anchor=east] at (-0.35,1.15) {Ciphertext:};
+                \foreach \i/\b in {0/0,1/1,2/1,3/0,4/0,5/1,6/1,7/0} {
+                    \node[circle, draw=black!30, fill=white, inner sep=2pt, font=\tiny]
+                        (out\i) at (\i*0.42,1.15) {\b};
+                }
+
+                \node[circle, draw=buetAccent, fill=buetAccent!25, line width=1.0pt,
+                      inner sep=2pt, font=\tiny, visible on=<2->] (in3flip)
+                      at (3*0.42,3.60) {1};
+
+                \node[circle, draw=awesomeForestGreen, fill=awesomeForestGreen!35, line width=1.0pt,
+                      inner sep=2pt, font=\tiny, visible on=<2->] (out0flip)
+                      at (0*0.42,1.15) {1};
+                \node[circle, draw=awesomeForestGreen, fill=awesomeForestGreen!35, line width=1.0pt,
+                      inner sep=2pt, font=\tiny, visible on=<2->] (out2flip)
+                      at (2*0.42,1.15) {0};
+                \node[circle, draw=awesomeForestGreen, fill=awesomeForestGreen!35, line width=1.0pt,
+                      inner sep=2pt, font=\tiny, visible on=<2->] (out4flip)
+                      at (4*0.42,1.15) {1};
+                \node[circle, draw=awesomeForestGreen, fill=awesomeForestGreen!35, line width=1.0pt,
+                      inner sep=2pt, font=\tiny, visible on=<2->] (out5flip)
+                      at (5*0.42,1.15) {0};
+                \node[circle, draw=awesomeForestGreen, fill=awesomeForestGreen!35, line width=1.0pt,
+                      inner sep=2pt, font=\tiny, visible on=<2->] (out7flip)
+                      at (7*0.42,1.15) {1};
+
+                \draw[arrow, buetAccent, line width=0.7pt, visible on=<2->]
+                    (in3flip) to[out=-90, in=90] (out0flip);
+                \draw[arrow, buetAccent, line width=0.7pt, visible on=<2->]
+                    (in3flip) to[out=-90, in=90] (out2flip);
+                \draw[arrow, buetAccent, line width=0.7pt, visible on=<2->]
+                    (in3flip) to[out=-90, in=90] (out4flip);
+                \draw[arrow, buetAccent, line width=0.7pt, visible on=<2->]
+                    (in3flip) to[out=-90, in=90] (out5flip);
+                \draw[arrow, buetAccent, line width=0.7pt, visible on=<2->]
+                    (in3flip) to[out=-90, in=90] (out7flip);
+
+                \node[font=\tiny, text=buetAccent, visible on=<2->] at (1.47,0.40)
+                    {1 bit flip $\rightarrow$ many bits change};
+            \end{tikzpicture}
+    \end{columns}
+    \end{wide}
+\end{frame}
+
+
+
+
+
+\begin{frame}{A Massive Key Space}
+    \begin{wide}
+    \begin{columns}[T,onlytextwidth]
+        \column{0.68\textwidth}
+            \vspace{-0.5em}
+            Keys must be large enough to make brute-force search impractical.
+
+            \vspace{0.5em}
+            \onslide<1->{AES supports 128, 192, or 256-bit keys; a 128-bit key alone yields $2^{128}$ combinations (over 340 undecillion).}\\[0.8em]
+
+            \onslide<2->{A robust Key Expansion algorithm ensures every derived round key is cryptographically unique.}\\[0.8em]
+
+            \onslide<3->{
+            \begin{alertblock}{\textbf{Warning}}
+                Poor key management breaks even the strongest algorithm.
+            \end{alertblock}
+            }
+
+        \column{0.32\textwidth}
+            \onslide<1->{
+            \vspace{0.5em}
+            \begin{center}
+            \vspace{1em}
+            \hspace{2em}
+            \begin{tikzpicture}[scale=0.85, transform shape]
+                \node[roundednode, fill=awesomeCharcoal!80, text=white, minimum width=3cm] (k1) at (0, 1.5) {128-bit Key};
+                \node[roundednode, fill=awesomeCharcoal!80, text=white, minimum width=3cm] (k2) at (0, 0) {192-bit Key};
+                \node[roundednode, fill=awesomeCharcoal!80, text=white, minimum width=3cm] (k3) at (0, -1.5) {256-bit Key};
+
+                \node[font=\Huge, text=awesomeForestGreen] at (2.5, 0) {\checkmark};
+            \end{tikzpicture}
+            \end{center}
+            }
+    \end{columns}
+    \end{wide}
+\end{frame}
+
+
+
+
+
+\begin{frame}{Resistance to Cryptanalysis}
+    \begin{wide}
+    \begin{columns}[T,onlytextwidth]
+        \column{0.68\textwidth}
+            \vspace{-0.5em}
+            A strong standard is tested against known cryptanalysis and maintains a practical security margin.
+
+            \vspace{0.5em}
+            \onslide<1->{AES neutralizes differential and linear cryptanalysis via the algebraic complexity of its S-Box.}\\[0.8em]
+
+            \onslide<2->{The rigorous key schedule mitigates Related-Key, side-channel, and brute-force attacks.}
+
+        \column{0.32\textwidth}
+            \onslide<1->{
+            \begin{center}
+            \vspace{-1.5em}
+            \hspace{2em}
+            \begin{tikzpicture}[scale=0.85, transform shape]
+                \node[circle, fill=buetAccent!80, text=white, minimum size=1.5cm, align=center] (atk) at (0, 1.5) {Hacker\\Attack};
+                \node[rectangle, fill=awesomeForestGreen!80, text=white, minimum width=3cm, minimum height=0.6cm] (wall) at (0, -0.5) {AES Math Wall};
+                \node[rectangle, fill=awesomeSlateBlue!30, minimum width=3cm, minimum height=0.6cm] (data) at (0, -2) {Secure Data};
+
+                \draw[->, thick, buetAccent] (atk) -- (0, 0);
+                \draw[thick, buetAccent] (0, 0) -- (-0.5, 0.5);
+                \draw[thick, buetAccent] (0, 0) -- (0.5, 0.5);
+            \end{tikzpicture}
+            \vspace{1.2em}
+            \end{center}
+            }
+    \end{columns}
+    \end{wide}
+\end{frame}
+
+
+
+
+
+\begin{frame}{Efficiency in Software \& Hardware}
+    \begin{wide}
+    \begin{columns}[T,onlytextwidth]
+        \column{0.68\textwidth}
+            \vspace{-0.5em}
+            If encryption is too slow, people disable or misuse it; a good standard must be fast on all devices.
+
+            \vspace{0.5em}
+            \onslide<1->{AES relies on fast operations (XOR, bit shifts), enabling real-time throughput even on constrained hardware.}\\[0.8em]
+
+            \onslide<2->{Modern CPUs accelerate AES at the silicon level via \textbf{AES-NI}, scaling seamlessly from IoT devices to enterprise servers.}
+
+        \column{0.32\textwidth}
+            \onslide<1->{
+            \begin{center}
+            \vspace{1.5em}
+            \hspace{2.5em}
+            \begin{tikzpicture}[scale=0.75, transform shape]
+                \draw[thick, ->] (0,0) -- (4,0) node[right] {\footnotesize Devices};
+                \draw[thick, ->] (0,0) -- (0,3) node[above] {\footnotesize Speed};
+
+                \draw[fill=awesomeSlateBlue!70] (0.5,0) rectangle (1.2,1);
+                \node[font=\scriptsize, align=center] at (0.85, -0.4) {IoT/Smart\\Watch};
+
+                \draw[fill=buetAccent!80] (1.7,0) rectangle (2.4,1.8);
+                \node[font=\scriptsize] at (2.05, -0.3) {Phone};
+
+                \draw[fill=awesomeForestGreen!80] (2.9,0) rectangle (3.6,2.6);
+                \node[font=\scriptsize, align=center] at (3.25, -0.4) {Server\\(AES-NI)};
+            \end{tikzpicture}
+            \end{center}
+            }
+    \end{columns}
+    \end{wide}
+\end{frame}
+
+
+\section{Conclusion}
+
+\begin{frame}{The Global Standard}
+	\begin{wide}
+	\vspace{-0.5em}
+		\onslide<1->{\textbf{Ubiquity:} AES is the trusted standard securing daily digital life, from local Wi-Fi networks to international banking.}\\[1em]
+		
+		\onslide<2->{\textbf{Cryptographic Elegance:} It flawlessly implements Shannon's principles of Confusion and Diffusion through simple but highly effective byte math.}\\[1em]
+		
+		\onslide<3->{\textbf{Future-Proof:} The AES-256 variant provides a robust security margin, widely considered safe even against future quantum computing threats.}
+	\end{wide}
+\end{frame}
+
+\begin{frame}{Final Thoughts}
+	\begin{wide}
+	\vspace{1em}
+	\begin{center}
+	\onslide<1->{
+	\begin{tikzpicture}
+		\node[rectangle, rounded corners, fill=awesomeSlateBlue!10, draw=awesomeSlateBlue, thick, inner sep=15pt, text width=0.85\textwidth, align=center] {
+			\Large AES is more than just an algorithm.\\
+			\vspace{0.8em}
+			\normalsize \textit{It is the fundamental cornerstone of trust in our modern digital society.}
+		};
+	\end{tikzpicture}
+	}
+	\end{center}
+	\vspace{2.5em}
+	\onslide<2->{
+	\begin{center}
+	\Large \textbf{Thank You}
+	\end{center}
+	}
+	\end{wide}
+\end{frame}
+
+\end{document}
+
